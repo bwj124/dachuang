@@ -15,13 +15,16 @@ public class MethodBodyPrinter extends VoidVisitorAdapter {
     public int num = 0;
     public String fileName;
     public String fileLine;
+    public String project;
+    public String label;
 
-    public MethodBodyPrinter(String projectname, String filename, String fileLine, String label, int index) {
+    public MethodBodyPrinter(String project, String filename, String fileLine, String label, int index) {
         String projectRoot = "F:/大创/Bug Detection/ASTNN/TransASTNN/simfix_supervised_data/mine/555/";
-        this.projectname = projectname;
-        this.label = label;
         this.fileName = filename;
         this.fileLine = fileLine;
+        this.project = project;
+        this.label = label;
+
         this.srcFile = new File(projectRoot+"src.tsv");
         this.labelsFile = new File(projectRoot+"lables.csv");
         this.logFile = new File(projectRoot+"log");
@@ -80,7 +83,7 @@ public class MethodBodyPrinter extends VoidVisitorAdapter {
 
                 log = new FileOutputStream(this.logFile, true);
                 OutputStreamWriter logw = new OutputStreamWriter(log, "UTF-8");
-                logw.write(this.projectname+"."+this.fileName+"."+this.fileLine+"."+this.label+"\n");
+                logw.write(this.project+"."+this.fileName+"."+this.fileLine+"."+this.label+"\n");
                 logw.close();
             } catch (Exception e){
                 e.printStackTrace();

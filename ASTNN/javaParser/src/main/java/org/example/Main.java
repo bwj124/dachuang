@@ -10,8 +10,8 @@ import java.io.*;
  */
 
 public class Main {
-//    public static String dataRoot = "F:/others/Math_slices/";
-    public static String dataRoot = "G:/dc/zyb/Math_slices_falsepositive/";
+    public static String dataRoot = "F:/others/Math_slices/";
+//    public static String dataRoot = "G:/dc/zyb/Math_slices_falsepositive/";
 
     // 遍历所有目录 Main
     // 根据slice的行号找到对应代码段 findCode -> MethodLinePrinter
@@ -26,6 +26,8 @@ public class Main {
             String codePath = "";
             String filename = "";
             String lineNum = "";
+            String project = "";
+            String label = "";
             File newDirFile = new File(newDir);
             File[] dataFiles = newDirFile.listFiles();
             if (dataFiles == null){
@@ -48,8 +50,10 @@ public class Main {
                     boolean once = true;
                     if (file.getName().endsWith(".txt")&&once){
                         String[] info = file.getName().split("\\.");
+                        project = info[0];
                         filename = info[1];
                         lineNum = info[2];
+                        label = info[5];
                         once = false;
                     } else {
                         codePath = file.getAbsolutePath();
@@ -102,7 +106,7 @@ public class Main {
                     }
                 }
                 int index = i - 1;
-                MethodBodyPrinter methodBodyVisitor = new MethodBodyPrinter(filename, lineNum, index);
+                MethodBodyPrinter methodBodyVisitor = new MethodBodyPrinter(project, filename, lineNum, label, index);
                 methodBodyVisitor.visit(compilationUnit, null);
             } catch (Exception e){
                 e.printStackTrace();

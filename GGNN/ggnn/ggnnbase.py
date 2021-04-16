@@ -44,6 +44,7 @@ class GGNN(object):
         }
 
     def __init__(self, args):
+        init_time = time.time()
         self.args = args
 
         # Collect argument things:
@@ -74,6 +75,7 @@ class GGNN(object):
         if '--epoch' in args and args['--epoch'] is not None:
             params['num_epochs'] = int(args['--epoch'])
 
+        
         log_sub_path = re.sub(r'_\d+', '', params['train_file'].replace('train_', '').replace('.json', ''))
         # if '--random_seed' in args and args['--random_seed'] is not None:
         #     params['random_seed'] = int(args['--random_seed'])
@@ -86,7 +88,7 @@ class GGNN(object):
         self.log_file = os.path.join(log_dir, "%s_log.json" % self.run_id)
         self.best_model_file = os.path.join(log_dir, "%s_model_best.pickle" % self.run_id)
         self.online_data_backup_file = os.path.join(log_dir, "%s_result" % self.run_id)
-
+        
         config_file = args.get('--config-file')
         if config_file is not None:
             with open(config_file, 'r') as f:
@@ -100,7 +102,7 @@ class GGNN(object):
         print("Run %s starting with following parameters:\n%s" % (self.run_id, json.dumps(self.params)))
         random.seed(params['random_seed'])
         np.random.seed(params['random_seed'])
-
+        args_time = time.time()
 
         # Load data:
         self.max_num_vertices = 0
@@ -108,10 +110,13 @@ class GGNN(object):
         self.annotation_size = 0
         self.train_data = self.load_data(params['train_file'], is_training_data=True)
         self.valid_data = self.load_data(params['valid_file'], is_training_data=False)
-
+        loaddata_time = time.time()
+        
         # Build the actual model
         config = tf.ConfigProto()
         config.gpu_options.allow_growth = True
+        config_time = time.time()
+        
         self.graph = tf.Graph()
         self.sess = tf.Session(graph=self.graph, config=config)
         #self.sess = tf.InteractiveSession(graph=self.graph, config=config)
@@ -123,6 +128,7 @@ class GGNN(object):
             self.ops = {}
             self.make_model()
             self.make_train_step()
+            make_model_time = time.time()
 
             # Restore/initialize variables:
             restore_file = args.get('--restore')
@@ -130,6 +136,14 @@ class GGNN(object):
                 self.restore_model(restore_file)
             else:
                 self.initialize_model()
+        graph_sess_time = time.time()
+        
+        out_str = "load args: {}\t load data time: {}\t config time: {}\t make_model time: {}\t build(except make_model) time: {}".format(args_time-init_time, loaddata_time-args_time, config_time-loaddata_time, make_model_time-config_time, graph_sess_time-make_model_time)
+        print(out_str)
+        with open('./outputs/time.log', 'a') as f:
+            f. write('---------- make_model: '+str(int(init_time))+'----------\n')
+            f.write(out_str+'\n')
+            
 
     def is_predict(self):
         return self.params['predict']
@@ -297,6 +311,7 @@ class GGNN(object):
         batch_iterator = ThreadedIterator(self.make_minibatch_iterator(data, is_training), max_queue_size=5)
         
         for step, batch_data in enumerate(batch_iterator):
+            
             num_graphs = batch_data[self.placeholders['num_graphs']]
             processed_graphs += num_graphs
             if is_training:
@@ -393,6 +408,7 @@ class GGNN(object):
         return loss, accuracies, precision, recall, f1, instance_per_sec
 
     def train(self, is_test):
+        train_begin_time = time.time()
         log_to_save = []
         total_time_start = time.time()
         summ_line = '%d\t%s\t%.2f\t%.2f\t%.2f\t%.2f\t%.2f\t%.2f\t%.2f'
@@ -401,6 +417,7 @@ class GGNN(object):
         bak_train_data = []
         bak_valid_data = []
         with self.graph.as_default():
+            restore_time = time.time()
             if self.args.get('--restore') is not None:
             #valid_loss, valid_accs, valid_precision, valid_recall, valid_f1, valid_speed = self.run_epoch("Test (validation)", self.valid_data, False)
             #with open('./outputs/test.log', 'a') as f:
@@ -409,6 +426,7 @@ class GGNN(object):
                 best_val_acc = np.sum(valid_accs)
                 best_val_acc_epoch = 0
                 print("\r\x1b[KResumed operation, initial cum. val. acc: %.5f" % best_val_acc)
+                restore_time = time.time()
             else:
                 (best_val_acc, best_val_acc_epoch) = (0., 0.)
             if is_test == False:
@@ -425,6 +443,14 @@ class GGNN(object):
 
                     bak_train_data.append([epoch, self.params['train_file'], train_loss, np.sum(train_accs), np.sum(train_precision), np.sum(train_recall), np.sum(train_f1), train_speed])
                     bak_valid_data.append([epoch, self.params['valid_file'], valid_loss, np.sum(valid_accs), np.sum(valid_precision), np.sum(valid_recall), np.sum(valid_f1), valid_speed])
+                    if epoch == 1:
+                        first_epoch = time.time()
+                    if epoch == 2:
+                        second_epoch = time.time()
+                    if epoch == self.params['num_epochs']-1:
+                        next2last_epoch = time.time()
+                    if epoch == self.params['num_epochs']:
+                        last_epoch = time.time()
 
                     if is_test == False:
                         val_acc = np.sum(valid_accs)  # type: float
@@ -443,11 +469,13 @@ class GGNN(object):
 
         header = "epoch\tfile\tloss\taccs\tprecision\trecall\tf1\tspeed\n"
         if is_test == True:
+            test_begin_time = time.time()
             batch_iterator = ThreadedIterator(self.make_minibatch_iterator(self.valid_data, False), max_queue_size=5)
             for batch_data in batch_iterator:
                 batch_data[self.placeholders['out_layer_dropout_keep_prob']] = 1.0
                 valid_loss, valid_accs, valid_precision, valid_recall, valid_f1, valid_speed = self.run_epoch("Test: ", batch_data, False, True)
                 print("Test: %s\t%.2f\t%.2f\t%.2f\t%.2f\t%.2f\t%.2f"%(self.params['valid_file'], valid_loss, valid_accs, valid_precision, valid_recall, valid_f1, valid_speed))
+            test_end_time = time.time()
             #with open(self.online_data_backup_file + "_train_final.txt", "w") as f:
             #    f.write(header)
             #    for line in bak_train_data:
@@ -464,7 +492,18 @@ class GGNN(object):
                 f.write(header)
                 for line in bak_valid_data:
                     f.write("\t".join([str(item) for item in line]) + "\n")
-
+        
+        with open('./outputs/time.log', 'a') as f:
+            if not is_test:
+                out_str = "init time:{}\trestore time:{}\tfirst train:{}\tlast train:{}".format(restore_time-train_begin_time, first_epoch-restore_time, second_epoch-first_epoch, last_epoch-next2last_epoch)
+                f. write('---------- train: '+str(int(train_begin_time))+'----------\n')
+            else:
+                out_str = "init time:{}\trestore time:{}\ttest time:{}".format(restore_time-train_begin_time, test_begin_time-restore_time, test_end_time-test_begin_time)
+                f. write('---------- test: '+str(int(train_begin_time))+'----------\n')
+            f.write(out_str+'\n')
+            print(out_str)
+        
+        
     def test(self):
         with self.graph.as_default():
             if self.args.get('--restore') is not None:

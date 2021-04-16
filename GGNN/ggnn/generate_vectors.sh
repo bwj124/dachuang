@@ -1,0 +1,1 @@
+python3 ggnn_sparse_vector.py --predict --restore logs/rw-slice-rand-train-z/rw-slice-rand-train-z.json_model_best.pickle --myalldata_dir ../ml/ggnn/data/singles/rw/ --valid_file rw-slice-rand-test-z.json --train_file rw-slice-rand-train-z.json

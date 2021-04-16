@@ -17,9 +17,14 @@ def contact_data():
         for _, _, f in os.walk(astnn_root):
             astnn_files = f
             for file in astnn_files:
-                info = file.split('-candidate_encode')[0]
+                allname = file.split('-candidate_encode')[0]
+                project = allname.split('.')[0]
+                name = allname.split('.')[1]
+                line = allname.split('.')[2]
+                label = allname.split('.')[3]
+                # label = file.split('-candidate_encode')[]
                 for ggnn_f in files:
-                    if info.split('.')[-1] in ggnn_f and '.'.join(info.split('.')[:-1]) in ggnn_f:
+                    if name in ggnn_f and line in ggnn_f and label in ggnn_f and project in ggnn_f:
                         ggnn_data = np.load(ggnn_root + ggnn_f)
                         astnn_data = torch.load(astnn_root+file)
                         ggnn_data = torch.from_numpy(ggnn_data)
@@ -29,7 +34,7 @@ def contact_data():
                         print(ggnn_f.replace('.npy', '.pt'), 'contacted')
                     else:
                         continue
-    
+
     print('all data has contacted')
 
 
@@ -58,5 +63,5 @@ def generate_data():
 
 
 contact_data()
-generate_data()
+# generate_data()
 

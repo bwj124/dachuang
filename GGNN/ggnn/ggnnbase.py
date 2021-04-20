@@ -38,7 +38,7 @@ class GGNN(object):
 
             'train_file': 'train_set_small.json',
             'valid_file': 'test_set_small.json',
-            'timeout': 24*60*60,
+            'timeout': 24*60*60*2,
 
             'predict': False
         }

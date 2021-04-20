@@ -20,7 +20,7 @@ public class App {
         for (int i = 0;i < list.get(0).size();i ++) {
             String file_name = list.get(0).get(i).toString();
             String file_line = list.get(1).get(i).toString();
-            RootFileGetter rootFileGetter = new RootFileGetter(file_name, file_line, root);
+//            RootFileGetter rootFileGetter = new RootFileGetter(file_name, file_line, root);
         }
 
     }

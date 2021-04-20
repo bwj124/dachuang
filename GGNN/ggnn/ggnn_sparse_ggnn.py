@@ -293,7 +293,6 @@ class GGNNSparse(GGNN):
             batch_num_incoming_edges_per_type = []
             batch_graph_nodes_list = []
             node_offset = 0
-
             while num_graphs < len(data) and node_offset + len(data[num_graphs]['init']) < self.params['batch_size']:
                 cur_graph = data[num_graphs]
                 num_nodes_in_graph = len(cur_graph['init'])

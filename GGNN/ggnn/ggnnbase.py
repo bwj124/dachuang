@@ -377,6 +377,7 @@ class GGNN(object):
         TN_all = tf.reduce_sum(TN_all)
         FP_all = tf.reduce_sum(FP_all)
         FN_all = tf.reduce_sum(FN_all)
+        print('TP: ', TP_all, '\tTN: ', TN_all, '\tFP: ', FP_all, '\tFN: ', FN_all)
         #accuracies = np.sum(accuracies, axis=0) / processed_graphs
         #precision = np.sum(precision, axis=0) / processed_graphs
         #recall = np.sum(recall, axis=0) / processed_graphs
@@ -468,17 +469,17 @@ class GGNN(object):
 
             header = "epoch\tfile\tloss\taccs\tprecision\trecall\tf1\tspeed\n"
             if is_test == True:
-                out_str = "Test: %s\t%.2f\t%.2f\t%.2f\t%.2f\t%.2f\t%.2f"
                 test_begin_time = time.time()
                 valid_loss, valid_accs, valid_precision, valid_recall, valid_f1, valid_speed = self.run_epoch("Test: ", self.valid_data, False, False)
-                print(out_str%(self.params['valid_file'], valid_loss, valid_accs, valid_precision, valid_recall, valid_f1, valid_speed))
+                print("Test: %s\t%.2f\t%.2f\t%.2f\t%.2f\t%.2f\t%.2f"%(self.params['valid_file'], valid_loss, valid_accs, valid_precision, valid_recall, valid_f1, valid_speed))
                 test_end_time = time.time()
                 #with open(self.online_data_backup_file + "_train_final.txt", "w") as f:
                 #    f.write(header)
                 #    for line in bak_train_data:
                 #        f.write("\t".join([str(item) for item in line]) + "\n")
                 with open(self.online_data_backup_file + "_test.txt", "w") as f:
-                    print("file\tloss\taccs\tprecision\trecall\tf1\tspeed\n", out_str%(self.params['valid_file'], valid_loss, valid_accs, valid_precision, valid_recall, valid_f1, valid_speed), file=f)
+                    f.write("file\tloss\taccs\tprecision\trecall\tf1\tspeed\n")
+                    f.write("\t".join([self.params['valid_file'], valid_loss, valid_accs, valid_precision, valid_recall, valid_f1, valid_speed]) + "\n")
             else :    
                 with open(self.online_data_backup_file + "_train.txt", "w") as f:
                     f.write(header)

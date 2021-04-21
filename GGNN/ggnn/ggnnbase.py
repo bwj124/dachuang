@@ -21,7 +21,7 @@ class GGNN(object):
     @classmethod
     def default_params(cls):
         return {
-            'num_epochs': 100,#3000,
+            'num_epochs': 200,#3000,
             'patience': 100,
             'learning_rate': 0.001,
             'clamp_gradient_norm': 1.0,
@@ -377,7 +377,7 @@ class GGNN(object):
         TN_all = tf.reduce_sum(TN_all)
         FP_all = tf.reduce_sum(FP_all)
         FN_all = tf.reduce_sum(FN_all)
-        print('TP: ', TP_all, '\tTN: ', TN_all, '\tFP: ', FP_all, '\tFN: ', FN_all)
+        print('TP: ', self.sess.run(TP_all), '\tTN: ', self.sess.run(TN_all), '\tFP: ', self.sess.run(FP_all), '\tFN: ', self.sess.run(FN_all))
         #accuracies = np.sum(accuracies, axis=0) / processed_graphs
         #precision = np.sum(precision, axis=0) / processed_graphs
         #recall = np.sum(recall, axis=0) / processed_graphs

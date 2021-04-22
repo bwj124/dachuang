@@ -382,6 +382,11 @@ class GGNN(object):
         #precision = np.sum(precision, axis=0) / processed_graphs
         #recall = np.sum(recall, axis=0) / processed_graphs
         #f1 = np.sum(f1, axis=0) / processed_graphs
+        TP = self.sess.run(TP_all)
+        TN = self.sess.run(TN_all)
+        FP = self.sess.run(FP_all)
+        FN = self.sess.run(FN_all)
+        
         loss = loss / processed_graphs
         instance_per_sec = processed_graphs / (time.time() - start_time)
         accuracies = (TP_all + TN_all)/(TP_all + TN_all + FP_all + FN_all)
@@ -405,14 +410,14 @@ class GGNN(object):
         #recall = list(recall.numpy())
         #f1 = list(f1.numpy())
 
-        return loss, accuracies, precision, recall, f1, instance_per_sec
+        return loss, accuracies, precision, recall, f1, instance_per_sec, TP, TN, FP, FN
 
     def train(self, is_test):
         train_begin_time = time.time()
         log_to_save = []
         total_time_start = time.time()
-        summ_line = '%d\t%s\t%.2f\t%.2f\t%.2f\t%.2f\t%.2f\t%.2f\t%.2f'
-        line = 'loss:%.2f\tacc:%.2f\tprecision:%.2f\trecall:%.2f\tf1:%.2f\tspeed:%.2f'
+        summ_line = '%d\t%s\t%.2f\t%.2f\t%.2f\t%.2f\t%.2f\t%.2f\t%d\t%d\t%d\t%d\t%.2f'
+        #line = 'loss:%.2f\tacc:%.2f\tprecision:%.2f\trecall:%.2f\tf1:%.2f\tspeed:%.2f'
 
         bak_train_data = []
         bak_valid_data = []
@@ -422,7 +427,7 @@ class GGNN(object):
             #valid_loss, valid_accs, valid_precision, valid_recall, valid_f1, valid_speed = self.run_epoch("Test (validation)", self.valid_data, False)
             #with open('./outputs/test.log', 'a') as f:
                 #print(line%(valid_loss, valid_accs, valid_precision, valid_recall, valid_f1, valid_speed), file = f)
-                _, valid_accs, _, _, _, _ = self.run_epoch("Resumed (validation)", self.valid_data, False, False)
+                _, valid_accs, _, _, _, _, _, _, _, _ = self.run_epoch("Resumed (validation)", self.valid_data, False, False)
                 best_val_acc = np.sum(valid_accs)
                 best_val_acc_epoch = 0
                 print("\r\x1b[KResumed operation, initial cum. val. acc: %.5f" % best_val_acc)
@@ -431,18 +436,18 @@ class GGNN(object):
                 (best_val_acc, best_val_acc_epoch) = (0., 0.)
             if is_test == False:
                 for epoch in range(1, self.params['num_epochs'] + 1):
-                    train_loss, train_accs, train_precision, train_recall, train_f1, train_speed = self.run_epoch("epoch %i (training)" % epoch, self.train_data, True, False)
-                    valid_loss, valid_accs, valid_precision, valid_recall, valid_f1, valid_speed = self.run_epoch("epoch %i (validation)" % epoch, self.valid_data, False, False)
+                    train_loss, train_accs, train_precision, train_recall, train_f1, train_speed, train_TP, train_TN, train_FP, train_FN = self.run_epoch("epoch %i (training)" % epoch, self.train_data, True, False)
+                    valid_loss, valid_accs, valid_precision, valid_recall, valid_f1, valid_speed, valid_TP, valid_TN, valid_FP, valid_FN  = self.run_epoch("epoch %i (validation)" % epoch, self.valid_data, False, False)
                     epoch_time = time.time() - total_time_start
-                    print(summ_line%(epoch, self.params['train_file'], train_loss, train_accs, train_precision, train_recall, train_f1, train_speed, epoch_time))
-                    print(summ_line%(epoch, self.params['valid_file'], valid_loss, valid_accs, valid_precision, valid_recall, valid_f1, valid_speed, epoch_time))
+                    print(summ_line%(epoch, self.params['train_file'], train_loss, train_accs, train_precision, train_recall, train_f1, train_speed, epoch_time, train_TP, train_TN, train_FP, train_FN))
+                    print(summ_line%(epoch, self.params['valid_file'], valid_loss, valid_accs, valid_precision, valid_recall, valid_f1, valid_speed, epoch_time, valid_TP, valid_TN, valid_FP, valid_FN))
                 #    with open('./outputs/train.log', 'a') as f:
                 #        print(line%(train_loss, train_accs, train_precision, train_recall, train_f1, train_speed), file = f)
                 #with open('./outputs/test.log', 'a') as f:
                 #    print(line%(valid_loss, valid_accs, valid_precision, valid_recall, valid_f1, valid_speed), file = f)
 
-                    bak_train_data.append([epoch, self.params['train_file'], train_loss, np.sum(train_accs), np.sum(train_precision), np.sum(train_recall), np.sum(train_f1), train_speed])
-                    bak_valid_data.append([epoch, self.params['valid_file'], valid_loss, np.sum(valid_accs), np.sum(valid_precision), np.sum(valid_recall), np.sum(valid_f1), valid_speed])
+                    bak_train_data.append([epoch, self.params['train_file'], train_loss, np.sum(train_accs), np.sum(train_precision), np.sum(train_recall), np.sum(train_f1), train_speed, train_TP, train_TN, train_FP, train_FN])
+                    bak_valid_data.append([epoch, self.params['valid_file'], valid_loss, np.sum(valid_accs), np.sum(valid_precision), np.sum(valid_recall), np.sum(valid_f1), valid_speed, valid_TP, valid_TN, valid_FP, valid_FN])
                     if epoch == 1:
                         first_epoch = time.time()
                     if epoch == 2:
@@ -467,19 +472,17 @@ class GGNN(object):
                         print("Stopping training after %i epochs timeout." % epoch)
                         break
 
-            header = "epoch\tfile\tloss\taccs\tprecision\trecall\tf1\tspeed\n"
+            header = "epoch\tfile\tloss\taccs\tprecision\trecall\tf1\tspeed\tTP\tTN\tFP\tFN\n"
             if is_test == True:
-                test_begin_time = time.time()
-                valid_loss, valid_accs, valid_precision, valid_recall, valid_f1, valid_speed = self.run_epoch("Test: ", self.valid_data, False, False)
-                print("Test: %s\t%.2f\t%.2f\t%.2f\t%.2f\t%.2f\t%.2f"%(self.params['valid_file'], valid_loss, valid_accs, valid_precision, valid_recall, valid_f1, valid_speed))
-                test_end_time = time.time()
+                out_str = "Test: %s\t%.2f\t%.2f\t%.2f\t%.2f\t%.2f\t%.2f\t%d\t%d\t%d\t%d"
+                valid_loss, valid_accs, valid_precision, valid_recall, valid_f1, valid_speed, valid_TP, valid_TN, valid_FP, valid_FN = self.run_epoch("Test: ", self.valid_data, False, False)
+                print(out_str%(self.params['valid_file'], valid_loss, valid_accs, valid_precision, valid_recall, valid_f1, valid_speed, valid_TP, valid_TN, valid_FP, valid_FN))
                 #with open(self.online_data_backup_file + "_train_final.txt", "w") as f:
                 #    f.write(header)
                 #    for line in bak_train_data:
                 #        f.write("\t".join([str(item) for item in line]) + "\n")
                 with open(self.online_data_backup_file + "_test.txt", "w") as f:
-                    f.write("file\tloss\taccs\tprecision\trecall\tf1\tspeed\n")
-                    f.write("\t".join([self.params['valid_file'], valid_loss, valid_accs, valid_precision, valid_recall, valid_f1, valid_speed]) + "\n")
+                    print("file\tloss\taccs\tprecision\trecall\tf1\tspeed\tTP\tTN\tFP\tFN\n", out_str%(self.params['valid_file'], valid_loss, valid_accs, valid_precision, valid_recall, valid_f1, valid_speed, valid_TP, valid_TN, valid_FP, valid_FN), file=f)
             else :    
                 with open(self.online_data_backup_file + "_train.txt", "w") as f:
                     f.write(header)
@@ -504,7 +507,7 @@ class GGNN(object):
     def test(self):
         with self.graph.as_default():
             if self.args.get('--restore') is not None:
-                _, valid_accs, _, _, _, _ = self.run_epoch("Test run", self.valid_data, False, True)
+                _, valid_accs, _, _, _, _, _, _, _, _ = self.run_epoch("Test run", self.valid_data, False, True)
                 best_val_acc = np.sum(valid_accs)
                 print("Pred: %.2f" % best_val_acc)
                 

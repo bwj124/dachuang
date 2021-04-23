@@ -287,6 +287,7 @@ class GGNN(object):
         self.sess.run(tf.local_variables_initializer())
 
     def run_epoch(self, epoch_name: str, data, is_training: bool, is_test: bool):
+        init_begin_time = time.time()
         loss = 0
         TP_all = []
         TN_all = []
@@ -309,10 +310,12 @@ class GGNN(object):
         start_time = time.time()
         processed_graphs = 0
         batch_iterator = ThreadedIterator(self.make_minibatch_iterator(data, is_training), max_queue_size=5)
+        init_end_time = time.time()
         
         for step, batch_data in enumerate(batch_iterator):
             num_graphs = batch_data[self.placeholders['num_graphs']]
             processed_graphs += num_graphs
+            run_begin_time = time.time()
             if is_training:
                 batch_data[self.placeholders['out_layer_dropout_keep_prob']] = self.params['out_layer_dropout_keep_prob']
                 #fetch_list = [self.ops['loss'], accuracy_ops, accuracy_ops, precision_ops, recall_ops, f1_ops, self.ops['train_step']]
@@ -322,6 +325,7 @@ class GGNN(object):
                 #fetch_list = [self.ops['loss'], accuracy_ops, precision_ops, recall_ops, f1_ops]
                 fetch_list = [TP_ops, TN_ops, FP_ops, FN_ops, self.ops['loss']]
             result = self.sess.run(fetch_list, feed_dict=batch_data)
+            run_end_time = time.time()
             #if is_training:
             #    train_vector = []
             #    target_vector = []
@@ -405,6 +409,10 @@ class GGNN(object):
         recall = float(self.sess.run(recall))
         f1 = float(self.sess.run(f1))
 
+        with open('./outputs/time.log', 'a') as f:
+            out_str = 'init_time: {}\trun_once_time:{}\n'.format(init_end_time-init_begin_time, run_end_time-run_begin_time)
+            f.write(out_str)
+            f. write('---------- run epoch: '+str(int(run_begin_time))+'----------\n')
         #accuracies = list(accuracies.numpy())
         #precision = list(precision.numpy())
         #recall = list(recall.numpy())

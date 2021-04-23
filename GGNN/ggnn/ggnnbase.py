@@ -311,6 +311,7 @@ class GGNN(object):
         processed_graphs = 0
         batch_iterator = ThreadedIterator(self.make_minibatch_iterator(data, is_training), max_queue_size=5)
         init_end_time = time.time()
+        step_num = 0
         
         for step, batch_data in enumerate(batch_iterator):
             num_graphs = batch_data[self.placeholders['num_graphs']]
@@ -356,6 +357,7 @@ class GGNN(object):
             #    with open('./outputs/vector.txt','a') as f:
             #        f.write(str(vector)+'\n')
             # gated_output = self.sess.run(self.gated_outputs,feed_dict=batch_data)
+            step_num = step
             if not is_training and is_test:
                 final_node = self.sess.run(self.compute_final_node_representations(),feed_dict=batch_data)
                 final_node = np.mean(final_node, 0)
@@ -410,9 +412,10 @@ class GGNN(object):
         f1 = float(self.sess.run(f1))
 
         with open('./outputs/time.log', 'a') as f:
-            out_str = 'init_time: {}\trun_once_time:{}\n'.format(init_end_time-init_begin_time, run_end_time-run_begin_time)
-            f.write(out_str)
+            out_str = 'init_time: {}\trun_once_time:{}\tloop_num:{}'.format(init_end_time-init_begin_time, run_end_time-run_begin_time, step_num)
             f. write('---------- run epoch: '+str(int(run_begin_time))+'----------\n')
+            f.write(out_str+'\n')
+            print(out_str)
         #accuracies = list(accuracies.numpy())
         #precision = list(precision.numpy())
         #recall = list(recall.numpy())

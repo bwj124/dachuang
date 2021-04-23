@@ -434,7 +434,7 @@ class GGNN(object):
         bak_valid_data = []
         with self.graph.as_default():
             restore_time = time.time()
-            if self.args.get('--restore') is not None:
+            if self.args.get('--restore') is not None and not is_test:
             #valid_loss, valid_accs, valid_precision, valid_recall, valid_f1, valid_speed = self.run_epoch("Test (validation)", self.valid_data, False)
             #with open('./outputs/test.log', 'a') as f:
                 #print(line%(valid_loss, valid_accs, valid_precision, valid_recall, valid_f1, valid_speed), file = f)

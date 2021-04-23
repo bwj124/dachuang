@@ -474,8 +474,10 @@ class GGNN(object):
 
             header = "epoch\tfile\tloss\taccs\tprecision\trecall\tf1\tspeed\tTP\tTN\tFP\tFN\n"
             if is_test == True:
+                test_begin_time = time.time()
                 out_str = "Test: %s\t%.2f\t%.2f\t%.2f\t%.2f\t%.2f\t%.2f\t%d\t%d\t%d\t%d"
                 valid_loss, valid_accs, valid_precision, valid_recall, valid_f1, valid_speed, valid_TP, valid_TN, valid_FP, valid_FN = self.run_epoch("Test: ", self.valid_data, False, False)
+                test_end_time = time.time()
                 print(out_str%(self.params['valid_file'], valid_loss, valid_accs, valid_precision, valid_recall, valid_f1, valid_speed, valid_TP, valid_TN, valid_FP, valid_FN))
                 #with open(self.online_data_backup_file + "_train_final.txt", "w") as f:
                 #    f.write(header)

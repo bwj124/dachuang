@@ -378,7 +378,7 @@ class GGNN(object):
             #precision.append(np.array(batch_precision) * num_graphs)
             #recall.append(np.array(batch_recall) * num_graphs)
             #f1.append(np.array(batch_f1) * num_graphs)
-
+        result_begin_time = time.time()
         TP_all = tf.reduce_sum(TP_all)
         TN_all = tf.reduce_sum(TN_all)
         FP_all = tf.reduce_sum(FP_all)
@@ -410,9 +410,10 @@ class GGNN(object):
         precision = float(self.sess.run(precision))
         recall = float(self.sess.run(recall))
         f1 = float(self.sess.run(f1))
+        result_end_time = time.time()
 
         with open('./outputs/time.log', 'a') as f:
-            out_str = 'init_time: {}\trun_once_time:{}\tloop_num:{}'.format(init_end_time-init_begin_time, run_end_time-run_begin_time, step_num)
+            out_str = 'init_time: {}\trun_once_time:{}\tloop_num:{}\tcompute_result_time: {}'.format(init_end_time-init_begin_time, run_end_time-run_begin_time, step_num, result_end_time-result_begin_time)
             f. write('---------- run epoch: '+str(int(run_begin_time))+'----------\n')
             f.write(out_str+'\n')
             print(out_str)
